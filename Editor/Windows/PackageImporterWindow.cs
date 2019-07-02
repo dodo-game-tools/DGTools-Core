@@ -177,21 +177,12 @@ namespace DGTools.Editor {
         }
 
         void ImportPackage(PackageDatabase.Package package) {
-            JObject manifest = PackageDatabase.LoadManifest();
-            manifest["dependencies"][package.name] = (package.isLocal?"file:":"") + package.remotePath;
-            
-            PackageDatabase.SaveManifest(manifest);
+            packageDatabase.ImportPackage(package);
             AssetDatabase.Refresh();
         }
 
         void RemovePackage(PackageDatabase.Package package) {
-            if (PackageDatabase.isLocked)
-                throw new System.Exception("Package data base locked :  deletion canceled");
-
-            JObject manifest = PackageDatabase.LoadManifest();
-            ((JObject)manifest.SelectToken("dependencies")).Remove(package.name);
-
-            PackageDatabase.SaveManifest(manifest);
+            packageDatabase.RemovePackage(package);
             AssetDatabase.Refresh();
         }
 
@@ -216,7 +207,7 @@ namespace DGTools.Editor {
         }
 
         void DeletePackage(PackageDatabase.Package package) {
-            packageDatabase.RemovePackage(package);
+            packageDatabase.DeletePackage(package);
             packageDatabase.Save();
             ReloadPackages();
             CloseEditionWindow();
