@@ -1,0 +1,14 @@
+{
+    "name": "Unity.DGTools.Core.Editor",
+    "references": [
+        "GUID:b1ca0d2bf199ff84bbb66f106e9fdd78"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": []
+}
