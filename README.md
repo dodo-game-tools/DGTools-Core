@@ -34,4 +34,3 @@ Licences are not implemented yet, but DGTools needs other packages free packages
 
 * [JsonDotNet](https://github.com/Poulpinou/DGTools-Core/Plugins/JsonDotNet/LICENSE.md)
 * [UIController](https://github.com/Poulpinou/DGTools-Core/Plugins/UIController/LICENSE.md)
-* [Doxygen](https://github.com/Poulpinou/DGTools-Core/Editor/Plugins/Doxygen/LICENSE.md)
