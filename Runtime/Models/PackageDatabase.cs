@@ -80,10 +80,27 @@ namespace DGTools {
             packages.Add(package);
         }
 
-        public void RemovePackage(Package package) {
+        public void DeletePackage(Package package) {
             if (packages.Contains(package)) {
                 packages.Remove(package);
             }
+        }
+
+        public void ImportPackage(Package package) {
+            JObject manifest = LoadManifest();
+            manifest["dependencies"][package.name] = (package.isLocal ? "file:" : "") + package.remotePath;
+
+            SaveManifest(manifest);
+        }
+
+        public void RemovePackage(Package package) {
+            if (isLocked)
+                throw new Exception("Package data base locked :  deletion canceled");
+
+            JObject manifest = LoadManifest();
+            ((JObject)manifest.SelectToken("dependencies")).Remove(package.name);
+
+            SaveManifest(manifest);
         }
 
         public List<Package> GetPackages() {
@@ -140,10 +157,10 @@ namespace DGTools {
                     }
                     else
                     {
-                        //TODO: Check remote
-                        return true;
+                        return remotePath.Contains(".git");
                     }
                 }
+
             }
         }
     }
