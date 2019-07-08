@@ -88,7 +88,7 @@ namespace DGTools {
 
         public void ImportPackage(Package package) {
             JObject manifest = LoadManifest();
-            manifest["dependencies"][package.name] = (package.isLocal ? "file:" : "") + package.remotePath;
+            manifest["dependencies"][package.name] = (package.isLocal ? "file:" : "") + package.remotePath + "#" + package.currentVersion;
 
             SaveManifest(manifest);
         }
@@ -105,63 +105,6 @@ namespace DGTools {
 
         public List<Package> GetPackages() {
             return packages;
-        }
-
-        //INTERNAL CLASSES
-        [Serializable]
-        public class Package
-        {
-            //VARIABLES
-            public string name;
-            public string remotePath;
-            public bool isLocal;
-
-            //PROPERTIES
-            public bool hasLocalPath {
-                get {
-                    return Directory.Exists(localPath);
-                }
-            }
-
-            public string localPath {
-                get {
-                    return Directory.GetParent(Application.dataPath) + "/Packages/" + name;
-                }
-            }
-
-            public JObject infos {
-                get {
-                    if (hasLocalPath) {
-                        return JObject.Parse(File.ReadAllText(localPath));
-                    }
-                    return null;
-                }
-            }
-
-            public DateTime lastEdition {
-                get {
-                    if (isValidRemotePath) {
-                        if (isLocal) {
-                            return File.GetLastWriteTime(remotePath + "/package.json");
-                        }
-                    }
-                    return DateTime.Now;
-                }
-            }
-
-            public bool isValidRemotePath {
-                get {
-                    if (isLocal)
-                    {
-                        return File.Exists(remotePath + "/package.json");
-                    }
-                    else
-                    {
-                        return remotePath.Contains(".git");
-                    }
-                }
-
-            }
         }
     }
 }

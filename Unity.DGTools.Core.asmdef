@@ -1,6 +1,8 @@
 {
     "name": "Unity.DGTools.Core",
-    "references": [],
+    "references": [
+        "Unity.EditorCoroutines.Editor"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
