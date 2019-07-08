@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
-using Newtonsoft.Json.Linq;
+using Unity.EditorCoroutines.Editor;
 
 namespace DGTools.Editor {
     public class PackageImporterWindow : DGToolsWindow
@@ -23,7 +23,7 @@ namespace DGTools.Editor {
         SortMode sortMode;
         Filter filter;
         bool editionWindowOpened = false;
-        PackageDatabase.Package editedPackage;
+        Package editedPackage;
 
         //ENUMS
         enum SortMode { AZ, Time}
@@ -35,7 +35,7 @@ namespace DGTools.Editor {
         {
             PackageImporterWindow window = GetWindow(typeof(PackageImporterWindow)) as PackageImporterWindow;
             window.titleContent = new GUIContent("Package Importer");
-            window.ReloadPackages();
+            window.ReloadPackages();           
         }
 
         private void OnGUI()
@@ -78,7 +78,10 @@ namespace DGTools.Editor {
             GUI.Label(line, "Name", arrayHeaderStyle);
 
             line = new Rect(line.xMax, line.yMin, scrollRect.width * versionColumnWidth, line.height);
-            GUI.Label(line, "Last Modified", arrayHeaderStyle);
+            GUI.Label(line, "Versions", arrayHeaderStyle);
+
+            //line = new Rect(line.xMax, line.yMin, scrollRect.width * versionColumnWidth, line.height);
+            //GUI.Label(line, "Last Modified", arrayHeaderStyle);
 
             line = new Rect(line.xMax, line.yMin, scrollRect.width * statusColumnWidth, line.height);
             GUI.Label(line, "Status", arrayHeaderStyle);
@@ -91,7 +94,7 @@ namespace DGTools.Editor {
 
             // Draw Array lines
             yPos = scrollRect.yMin;
-            foreach (PackageDatabase.Package package in GetSortedPackages()) {
+            foreach (Package package in GetSortedPackages()) {
                 bool available = package.hasLocalPath;
                 if ((filter == Filter.Available && available) || (filter == Filter.Installed && !available)) continue;
 
@@ -99,7 +102,15 @@ namespace DGTools.Editor {
                 GUI.Label(line, package.name, arrayLineStyle);
 
                 line = new Rect(line.xMax, line.yMin, scrollRect.width * versionColumnWidth, line.height);
-                GUI.Label(line, package.lastEdition.ToShortDateString(), arrayLineStyle);
+                if (package.isLoaded) {
+                    package.offset = EditorGUI.Popup(line, package.offset, package.availableVersions.ToArray());
+                }
+                else {
+                    GUI.Label(line, "Loading...", arrayLineStyle);
+                }
+
+                //line = new Rect(line.xMax, line.yMin, scrollRect.width * versionColumnWidth, line.height);
+                //GUI.Label(line, package.lastEdition.ToShortDateString(), arrayLineStyle);
 
                 line = new Rect(line.xMax, line.yMin, scrollRect.width * statusColumnWidth, line.height);
                 if (available)
@@ -107,9 +118,18 @@ namespace DGTools.Editor {
                     GUI.Label(line, "Installed", arrayLineStyle);
                     line = new Rect(line.xMax, line.yMin, scrollRect.width * actionColumnWidth * 0.6f, line.height);
 
-                    if (GUI.Button(line, "Remove", buttonStyle))
+                    if (package.offset != package.currentVersionOffset)
                     {
-                        RemovePackage(package);
+                        if (GUI.Button(line, "Update", buttonStyle))
+                        {
+                            UpdatePackage(package);
+                        }
+                    }
+                    else {
+                        if (GUI.Button(line, "Remove", buttonStyle))
+                        {
+                            RemovePackage(package);
+                        }
                     }
                 }
                 else {
@@ -119,7 +139,7 @@ namespace DGTools.Editor {
                     {
                         ImportPackage(package);
                     }
-                }
+                }     
 
                 line = new Rect(line.xMax, line.yMin, scrollRect.width * actionColumnWidth * 0.4f, line.height);
                 if (GUI.Button(line, "Edit", buttonStyle))
@@ -174,26 +194,35 @@ namespace DGTools.Editor {
         //METHODS
         void ReloadPackages() {
             packageDatabase = PackageDatabase.Load();
+            EditorCoroutineUtility.StartCoroutine(LoadVersions(), this);
         }
 
-        void ImportPackage(PackageDatabase.Package package) {
+        void ImportPackage(Package package) {
             packageDatabase.ImportPackage(package);
             AssetDatabase.Refresh();
         }
 
-        void RemovePackage(PackageDatabase.Package package) {
+        void RemovePackage(Package package) {
             packageDatabase.RemovePackage(package);
             AssetDatabase.Refresh();
         }
 
-        void EditPackage(PackageDatabase.Package package) {
+        void UpdatePackage(Package package)
+        {
+            package.currentVersion = package.availableVersions[package.offset];
+            packageDatabase.Save();
+            ImportPackage(package);
+            ReloadPackages();
+        }
+
+        void EditPackage(Package package) {
             editionWindowOpened = true;
             editedPackage = package;
         }
 
         void CreatePackage() {
             editionWindowOpened = true;
-            editedPackage = new PackageDatabase.Package();
+            editedPackage = new Package();
         }
 
         void SavePackage() {
@@ -206,7 +235,7 @@ namespace DGTools.Editor {
             CloseEditionWindow();
         }
 
-        void DeletePackage(PackageDatabase.Package package) {
+        void DeletePackage(Package package) {
             packageDatabase.DeletePackage(package);
             packageDatabase.Save();
             ReloadPackages();
@@ -219,8 +248,8 @@ namespace DGTools.Editor {
             ReloadPackages();
         }
 
-        List<PackageDatabase.Package> GetSortedPackages() {
-            List<PackageDatabase.Package> packages = packageDatabase.GetPackages();
+        List<Package> GetSortedPackages() {
+            List<Package> packages = packageDatabase.GetPackages();
 
             if (sortMode == SortMode.AZ)
             {
@@ -231,6 +260,17 @@ namespace DGTools.Editor {
             }
 
             return packages;
+        }
+
+        //COROUTINES
+        IEnumerator LoadVersions() {
+            EditorCoroutine coroutine;
+            foreach (Package package in packageDatabase.GetPackages()) {
+                coroutine = EditorCoroutineUtility.StartCoroutine(package.LoadAvailableVersions(), this);
+                while (!package.isErrored && !package.isLoaded) {
+                    yield return null;
+                }
+            }
         }
     }
 }
