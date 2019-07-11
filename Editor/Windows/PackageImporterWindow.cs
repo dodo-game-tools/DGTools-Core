@@ -62,9 +62,20 @@ namespace DGTools.Editor {
             filter = (Filter)EditorGUI.EnumPopup(new Rect(elementRect.center.x, elementRect.y, elementRect.width * 0.65f, elementRect.height), filter);
 
             // New Button
+            
             elementRect = new Rect(elementRect.xMax + topMenu.width * 0.1f, elementRect.yMin, topMenu.width * 0.25f, topMenu.height - 10);
-            if (GUI.Button(elementRect, "New Package", buttonStyle)){
-                CreatePackage();
+            if (PackageDatabase.isDevelopement)
+            {
+                if (GUI.Button(elementRect, "New Package", buttonStyle))
+                {
+                    CreatePackage();
+                }
+            }
+            else {
+                if (GUI.Button(elementRect, "Refresh", buttonStyle))
+                {
+                    ReloadPackages();
+                }
             }
 
             float yPos = topMenu.yMax;
@@ -209,8 +220,7 @@ namespace DGTools.Editor {
 
         void UpdatePackage(Package package)
         {
-            package.currentVersion = package.availableVersions[package.offset];
-            packageDatabase.Save();
+            package.currentVersionOffset = package.offset;
             ImportPackage(package);
             ReloadPackages();
         }

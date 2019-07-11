@@ -32,13 +32,7 @@ namespace DGTools {
             }
         }
 
-        public static bool isLocked {
-            get {
-                JToken lockToken = LoadManifest().SelectToken("locked");
-                if (lockToken == null || (bool)lockToken == false) return false;
-                return true;
-            }
-        }
+        public static bool isDevelopement {get; private set;}
 
         //METHODS
         public static PackageDatabase Load() {
@@ -48,7 +42,10 @@ namespace DGTools {
 
             string json = File.ReadAllText(databasePath);
 
-            return JsonUtility.FromJson<PackageDatabase>(json);
+            PackageDatabase database = JsonUtility.FromJson<PackageDatabase>(json);
+            JToken lockToken = LoadManifest().SelectToken("inDevelopement");
+            isDevelopement = !(lockToken == null || (bool)lockToken == false);
+            return database;
         }
 
         public void Save()
@@ -94,8 +91,8 @@ namespace DGTools {
         }
 
         public void RemovePackage(Package package) {
-            if (isLocked)
-                throw new Exception("Package data base locked :  deletion canceled");
+            if (isDevelopement)
+                throw new Exception("Package data base in developpement :  deletion canceled");
 
             JObject manifest = LoadManifest();
             ((JObject)manifest.SelectToken("dependencies")).Remove(package.name);
