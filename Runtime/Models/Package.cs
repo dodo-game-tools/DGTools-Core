@@ -14,7 +14,7 @@ namespace DGTools{
         public string name;
         public string remotePath = "";
         public bool isLocal;
-        public string currentVersion;
+        
 
         [NonSerialized] public int offset;
 
@@ -77,10 +77,13 @@ namespace DGTools{
             }
 
         }
+        public string currentVersion {
+            get { return availableVersions[currentVersionOffset]; }
+        }
 
         public List<string> availableVersions { get; private set; }
 
-        public int currentVersionOffset { get; private set; }
+        public int currentVersionOffset { get; set; }
 
         public bool isLoaded
         {
@@ -100,7 +103,7 @@ namespace DGTools{
             isErrored = false;
             availableVersions = new List<string>();
 
-            string request = remotePath.Replace(".git", "/branches");
+            string request = remotePath.Replace(".git", "/tags");
             request = request.Replace("github.com", "api.github.com/repos");
 
             UnityWebRequest www = UnityWebRequest.Get(request);
@@ -116,40 +119,48 @@ namespace DGTools{
             }
 
 
-            JArray branches = JArray.Parse(www.downloadHandler.text);
-            foreach (JObject branch in branches)
-            {
-                availableVersions.Add((string)branch.SelectToken("name"));
-            }
-
-            request = request.Replace("branches", "tags");
-
-            www = UnityWebRequest.Get(request);
-            yield return www.SendWebRequest();
-            while (!www.isDone)
-            {
-                if (www.isNetworkError || www.isHttpError)
-                {
-                    isErrored = true;
-                    throw new Exception(www.error);
-                }
-                yield return null;
-            }
-
             JArray tags = JArray.Parse(www.downloadHandler.text);
             foreach (JObject tag in tags)
             {
                 availableVersions.Add((string)tag.SelectToken("name"));
             }
 
+            if (PackageDatabase.isDevelopement)
+            {
+                request = request.Replace("tags", "branches");
+
+                www = UnityWebRequest.Get(request);
+                yield return www.SendWebRequest();
+                while (!www.isDone)
+                {
+                    if (www.isNetworkError || www.isHttpError)
+                    {
+                        isErrored = true;
+                        throw new Exception(www.error);
+                    }
+                    yield return null;
+                }
+
+                JArray branches = JArray.Parse(www.downloadHandler.text);
+                foreach (JObject branch in branches)
+                {
+                    availableVersions.Add((string)branch.SelectToken("name"));
+                }
+            }
+
+            string package = (string)PackageDatabase.LoadManifest()["dependencies"][name];
+
+            if (package == null || !package.Contains("#")) yield break;
+
+            string version = package.Split('#')[1];
             for (int i = 0; i < availableVersions.Count; i++)
             {
-                if (availableVersions[i] == currentVersion)
+                if (availableVersions[i] == version)
                 {
                     currentVersionOffset = i;
                     offset = i;
                 }
-                    
+
             }
         }
     }
