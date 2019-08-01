@@ -1,0 +1,18 @@
+{
+    "name": "Unity.DGTools.Core.Editor",
+    "references": [
+        "Unity.EditorCoroutines.Editor",
+        "Unity.ugui.Editor",
+        "Unity.DGTools.Core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": []
+}

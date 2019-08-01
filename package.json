@@ -1,8 +1,12 @@
 {
   "name": "com.dgtools.core",
   "displayName": "DGTools Core",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "The Core of DGTools required by each DTools packages. It contains global helpers for Unity projects.",
   "type": "tool",
-  "hideInEditor": false
+  "hideInEditor": false,
+  "dependencies": {
+    "jillejr.newtonsoft.json-for-unity": "12.0.1-patch-001",
+    "com.unity.editorcoroutines": ""
+  }
 }
