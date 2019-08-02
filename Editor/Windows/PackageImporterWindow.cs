@@ -8,22 +8,14 @@ using Unity.EditorCoroutines.Editor;
 namespace DGTools.Editor {
     public class PackageImporterWindow : DGToolsWindow
     {
-        //SETTINGS
-        const string scrollBackgroundColor = "#EEEEEE";
-        const int lineHeight = 30;
-        const float nameColumnWidth = 0.35f; //In percent [0,1]
-        const float versionColumnWidth = 0.20f; //In percent [0,1]
-        const float statusColumnWidth = 0.15f; //In percent[0, 1]
-        const float actionColumnWidth = 0.25f; //In percent[0, 1]
-        const float editionWindowHeight = 100;
-
-        //VARIABLES
+        #region Variables
         PackageDatabase packageDatabase;
         Vector2 scrollPosition = Vector2.zero;
         SortMode sortMode;
         Filter filter;
         bool editionWindowOpened = false;
         Package editedPackage;
+        #endregion
 
         //ENUMS
         enum SortMode { AZ, Time}
@@ -40,166 +32,174 @@ namespace DGTools.Editor {
 
         private void OnGUI()
         {
-            // Define GUIStyles
-            GUIStyle labelStyle = skin.GetStyle("Label");
-            GUIStyle arrayLineStyle = skin.GetStyle("ArrayLine");
-            GUIStyle buttonStyle = skin.GetStyle("Button");
-            GUIStyle arrayHeaderStyle = skin.GetStyle("ArrayHeaders");
-            Color bgColor;
-            ColorUtility.TryParseHtmlString(scrollBackgroundColor, out bgColor);
+            #region Top Bar
+            GUILayout.BeginHorizontal(skin.box);
 
-            // Top menu 
-            Rect topMenu = new Rect(0, 0, position.width, 30);
+            GUILayout.Label("Sort by", skin.FindStyle("Title"));
+            sortMode = (SortMode)EditorGUILayout.EnumPopup(sortMode);
 
-            // Sort box
-            Rect elementRect = new Rect(topMenu.xMin + 10, topMenu.yMin + 5, topMenu.width * 0.25f, topMenu.height - 10);
-            GUI.Label(new Rect(elementRect.xMin, elementRect.y, elementRect.width * 0.35f, elementRect.height), "Sorting", labelStyle);
-            sortMode = (SortMode)EditorGUI.EnumPopup(new Rect(elementRect.center.x, elementRect.y, elementRect.width * 0.65f, elementRect.height), sortMode);
-
-            // Filter box
-            elementRect = new Rect(elementRect.xMax + 50, elementRect.yMin, topMenu.width * 0.25f, topMenu.height - 10);
-            GUI.Label(new Rect(elementRect.xMin, elementRect.y, elementRect.width * 0.35f, elementRect.height), "Filter", labelStyle);
-            filter = (Filter)EditorGUI.EnumPopup(new Rect(elementRect.center.x, elementRect.y, elementRect.width * 0.65f, elementRect.height), filter);
-
-            // New Button
+            GUILayout.Label("Filter by", skin.FindStyle("Title"));
+            filter = (Filter)EditorGUILayout.EnumPopup(filter);          
             
-            elementRect = new Rect(elementRect.xMax + topMenu.width * 0.1f, elementRect.yMin, topMenu.width * 0.25f, topMenu.height - 10);
+            if (GUILayout.Button("Refresh", skin.button))
+            {
+                ReloadPackages();
+            }
+
             if (PackageDatabase.isDevelopement)
             {
-                if (GUI.Button(elementRect, "New Package", buttonStyle))
+                if (GUILayout.Button("New Package", skin.button))
                 {
                     CreatePackage();
                 }
             }
-            else {
-                if (GUI.Button(elementRect, "Refresh", buttonStyle))
-                {
-                    ReloadPackages();
-                }
+            if (GUILayout.Button("DM:"+ (PackageDatabase.isDevelopement? "On" : "Off"), skin.button))
+            {
+                PackageDatabase.isDevelopement = !PackageDatabase.isDevelopement;
             }
+            GUILayout.EndHorizontal();
+            #endregion
 
-            float yPos = topMenu.yMax;
 
-            // Define scroll area
-            Rect scrollRect = new Rect(0, yPos + lineHeight, position.width, position.height - yPos -lineHeight - (editionWindowOpened?editionWindowHeight:0));           
-            EditorGUI.DrawRect(scrollRect, bgColor);
 
-            // Draw array labels
-            Rect line = new Rect(scrollRect.xMin, scrollRect.yMin - 30, scrollRect.width * nameColumnWidth, lineHeight);           
-            GUI.Label(line, "Name", arrayHeaderStyle);
+            #region Array Headers
+            GUILayout.BeginHorizontal(skin.box);
 
-            line = new Rect(line.xMax, line.yMin, scrollRect.width * versionColumnWidth, line.height);
-            GUI.Label(line, "Versions", arrayHeaderStyle);
+            float cellWidth = position.width / 4 - 5;
+            GUILayout.Label("Name", skin.FindStyle("Title"), GUILayout.Width(cellWidth));
+            GUILayout.Label("Versions", skin.FindStyle("Title"), GUILayout.Width(cellWidth));
+            GUILayout.Label("Status", skin.FindStyle("Title"), GUILayout.Width(cellWidth));
+            GUILayout.Label("Actions", skin.FindStyle("Title"), GUILayout.Width(cellWidth));
 
-            //line = new Rect(line.xMax, line.yMin, scrollRect.width * versionColumnWidth, line.height);
-            //GUI.Label(line, "Last Modified", arrayHeaderStyle);
+            GUILayout.EndHorizontal();
+            #endregion
 
-            line = new Rect(line.xMax, line.yMin, scrollRect.width * statusColumnWidth, line.height);
-            GUI.Label(line, "Status", arrayHeaderStyle);
+            #region Package List
+            scrollPosition = GUILayout.BeginScrollView(scrollPosition, skin.box);
 
-            line = new Rect(line.xMax, line.yMin, scrollRect.width * actionColumnWidth, line.height);
-            GUI.Label(line, "Actions", arrayHeaderStyle);
-
-            // Draw scroll area
-            scrollPosition = GUI.BeginScrollView(scrollRect, scrollPosition, new Rect(0, yPos + lineHeight, scrollRect.width-20, packageDatabase.GetPackages().Count * lineHeight));            
-
-            // Draw Array lines
-            yPos = scrollRect.yMin;
             foreach (Package package in GetSortedPackages()) {
                 bool available = package.hasLocalPath;
                 if ((filter == Filter.Available && available) || (filter == Filter.Installed && !available)) continue;
 
-                line = new Rect(scrollRect.xMin, yPos, scrollRect.width * nameColumnWidth, lineHeight);
-                GUI.Label(line, package.name, arrayLineStyle);
+                #region Array Line
+                GUILayout.BeginHorizontal(GUILayout.ExpandHeight(false), GUILayout.MaxHeight(30));
 
-                line = new Rect(line.xMax, line.yMin, scrollRect.width * versionColumnWidth, line.height);
-                if (package.isLoaded) {
-                    package.offset = EditorGUI.Popup(line, package.offset, package.availableVersions.ToArray());
+                GUILayout.Label(package.name, skin.FindStyle("ArrayLine"), GUILayout.Width(cellWidth));
+
+                if (package.isLoaded)
+                {
+                    GUILayout.BeginHorizontal(skin.FindStyle("ArrayLine"), GUILayout.Width(cellWidth));
+                    package.offset = EditorGUILayout.Popup(package.offset, package.availableVersions.ToArray());
+                    GUILayout.EndHorizontal();
                 }
-                else {
-                    GUI.Label(line, "Loading...", arrayLineStyle);
+                else
+                {
+                    GUILayout.Label("Loading...", skin.FindStyle("ArrayLine"), GUILayout.Width(cellWidth));
                 }
 
-                //line = new Rect(line.xMax, line.yMin, scrollRect.width * versionColumnWidth, line.height);
-                //GUI.Label(line, package.lastEdition.ToShortDateString(), arrayLineStyle);
+                GUILayout.Label(available?"Installed" : "Available", skin.FindStyle("ArrayLine"), GUILayout.Width(cellWidth));
 
-                line = new Rect(line.xMax, line.yMin, scrollRect.width * statusColumnWidth, line.height);
+                #region Action Field
+                GUILayout.BeginHorizontal(skin.FindStyle("ArrayLine"), GUILayout.Width(cellWidth));
                 if (available)
                 {
-                    GUI.Label(line, "Installed", arrayLineStyle);
-                    line = new Rect(line.xMax, line.yMin, scrollRect.width * actionColumnWidth * 0.6f, line.height);
-
                     if (package.offset != package.currentVersionOffset)
                     {
-                        if (GUI.Button(line, "Update", buttonStyle))
+                        if (GUILayout.Button("Update", skin.button))
                         {
                             UpdatePackage(package);
                         }
                     }
-                    else {
-                        if (GUI.Button(line, "Remove", buttonStyle))
+                    else
+                    {
+                        if (GUILayout.Button("Remove", skin.button))
                         {
                             RemovePackage(package);
                         }
                     }
                 }
-                else {
-                    GUI.Label(line, "Available", arrayLineStyle);
-                    line = new Rect(line.xMax, line.yMin, scrollRect.width * actionColumnWidth * 0.6f, line.height);
-                    if (GUI.Button(line, "Import", buttonStyle))
+                else
+                {
+                    if (GUILayout.Button("Import", skin.button))
                     {
                         ImportPackage(package);
                     }
-                }     
-
-                line = new Rect(line.xMax, line.yMin, scrollRect.width * actionColumnWidth * 0.4f, line.height);
-                if (GUI.Button(line, "Edit", buttonStyle))
-                {
-                    EditPackage(package);
                 }
 
-                yPos += line.height;
+                if (PackageDatabase.isDevelopement) {
+                    if (GUILayout.Button("Edit", skin.button))
+                    {
+                        EditPackage(package);
+                    }
+                }
+                
+                GUILayout.EndHorizontal();
+                #endregion
+
+                GUILayout.EndHorizontal();
+                #endregion
             }
 
-            GUI.EndScrollView();
 
-            // Draw Edition window
-            if (editionWindowOpened && editedPackage != null) {
-                Rect editionContainer = new Rect(scrollRect.xMin, scrollRect.yMax, position.width, editionWindowHeight);
+            GUILayout.EndScrollView();
+            #endregion
 
-                if (GUI.Button(new Rect(editionContainer.xMax - 20, editionContainer.yMin + 4, 16, 16), "x", buttonStyle))
+            if (editionWindowOpened && editedPackage != null)
+            {
+                #region Edition Window
+                GUILayout.BeginVertical(skin.box);
+
+                #region Close Button
+                GUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                if(GUILayout.Button("x", skin.box, GUILayout.Width(16)))
                 {
                     CloseEditionWindow();
                     return;
                 }
-                editionContainer.xMax -= 24;
+                GUILayout.EndHorizontal();
+                #endregion
 
-                line = new Rect(editionContainer.xMin, editionContainer.yMin, editionContainer.width, 20);
-                yPos = line.yMin;
-                GUI.Label(new Rect(line.xMin, yPos, line.width * 0.3f, line.height), "Name", labelStyle);
-                editedPackage.name = EditorGUI.TextField(new Rect(line.xMin + line.width * 0.3f, yPos, line.width * 0.7f, line.height), editedPackage.name);
-                yPos += line.height;
+                #region Name Field
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Name", GUILayout.Width(cellWidth));
+                editedPackage.name = EditorGUILayout.TextField(editedPackage.name);
+                GUILayout.EndHorizontal();
+                #endregion
 
-                GUI.Label(new Rect(line.xMin, yPos, line.width * 0.3f, line.height), "Path", labelStyle);
+                #region Name Field
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Path", GUILayout.Width(cellWidth));
                 if (!string.IsNullOrEmpty(editedPackage.remotePath)) editedPackage.remotePath = editedPackage.remotePath.Replace("\\", "/");
-                editedPackage.remotePath = EditorGUI.TextField(new Rect(line.xMin + line.width * 0.3f, yPos, line.width * 0.5f, line.height), editedPackage.remotePath);
-                GUI.Label(new Rect(line.xMin + line.width * 0.8f, yPos, line.width * 0.2f, line.height), editedPackage.isValidRemotePath ? "Valid" : "Invalid", labelStyle);
-                yPos += line.height;
+                editedPackage.remotePath = EditorGUILayout.TextField(editedPackage.remotePath);
+                GUILayout.Label(editedPackage.isValidRemotePath ? "Valid" : "Invalid");
+                GUILayout.EndHorizontal();
+                #endregion
 
-                GUI.Label(new Rect(line.xMin, yPos, line.width * 0.3f, line.height), "Is Local", labelStyle);
-                editedPackage.isLocal = EditorGUI.Toggle(new Rect(line.xMin + line.width * 0.3f, yPos, line.width * 0.7f, line.height), editedPackage.isLocal);
-                yPos += line.height;
+                #region Name Field
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Is Local", GUILayout.Width(cellWidth));
+                editedPackage.isLocal = EditorGUILayout.Toggle(editedPackage.isLocal);
+                GUILayout.EndHorizontal();
+                #endregion
 
-                if (GUI.Button(new Rect(line.xMin + line.width * 0.2f, yPos, line.width * 0.3f, line.height), "Save", buttonStyle))
+                #region Buttons
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Save", skin.button))
                 {
                     SavePackage();
-                }                
+                }
 
-                if (GUI.Button(new Rect(line.xMin + line.width * 0.5f, yPos, line.width * 0.3f, line.height), "Delete", buttonStyle))
+                if (GUILayout.Button("Delete", skin.button))
                 {
                     DeletePackage(editedPackage);
                 }
-            }           
+                GUILayout.EndHorizontal();
+                #endregion
+
+                GUILayout.EndVertical();
+                #endregion
+            }   
         }
 
         //METHODS
