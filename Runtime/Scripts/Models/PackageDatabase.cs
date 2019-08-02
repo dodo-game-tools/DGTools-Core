@@ -32,7 +32,7 @@ namespace DGTools {
             }
         }
 
-        public static bool isDevelopement {get; private set;}
+        public static bool isDevelopement {get; set;}
 
         //METHODS
         public static PackageDatabase Load() {
