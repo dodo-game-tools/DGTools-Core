@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using System.IO;
 using System;
+using System.Linq;
 using Newtonsoft.Json.Linq;
 
 namespace DGTools{
@@ -17,6 +18,7 @@ namespace DGTools{
         
 
         [NonSerialized] public int offset;
+        [NonSerialized] JObject _infos;
 
         //PROPERTIES
         public bool hasLocalPath
@@ -39,11 +41,11 @@ namespace DGTools{
         {
             get
             {
-                if (hasLocalPath)
+                if (_infos == null && hasLocalPath)
                 {
-                    return JObject.Parse(File.ReadAllText(localPath));
+                    _infos = JObject.Parse(File.ReadAllText(Path.Combine(localPath, "package.json")));
                 }
-                return null;
+                return _infos;
             }
         }
 
@@ -78,12 +80,14 @@ namespace DGTools{
 
         }
         public string currentVersion {
-            get { return availableVersions[currentVersionOffset]; }
+            get {
+                if (infos == null || infos["version"] == null)
+                    return "v0.0.0";
+                return "v"+(string)infos["version"];
+            }
         }
 
         public List<string> availableVersions { get; private set; }
-
-        public int currentVersionOffset { get; set; }
 
         public bool isLoaded
         {
@@ -148,19 +152,17 @@ namespace DGTools{
                 }
             }
 
-            string package = (string)PackageDatabase.LoadManifest()["dependencies"][name];
-
-            if (package == null || !package.Contains("#")) yield break;
-
-            string version = package.Split('#')[1];
+            offset = -1;
             for (int i = 0; i < availableVersions.Count; i++)
             {
-                if (availableVersions[i] == version)
+                if (availableVersions[i] == currentVersion)
                 {
-                    currentVersionOffset = i;
                     offset = i;
                 }
+            }
 
+            if (offset < 0) {
+                offset = availableVersions.IndexOf(availableVersions.Max());
             }
         }
     }
