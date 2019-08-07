@@ -1,7 +1,7 @@
 {
   "name": "com.dgtools.core",
   "displayName": "DGTools Core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The Core of DGTools required by each DTools packages. It contains global helpers for Unity projects.",
   "type": "tool",
   "hideInEditor": false,

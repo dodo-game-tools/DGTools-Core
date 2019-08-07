@@ -83,9 +83,9 @@ namespace DGTools {
             }
         }
 
-        public void ImportPackage(Package package) {
+        public void ImportPackage(Package package, string version) {
             JObject manifest = LoadManifest();
-            manifest["dependencies"][package.name] = (package.isLocal ? "file:" : "") + package.remotePath + "#" + package.currentVersion;
+            manifest["dependencies"][package.name] = (package.isLocal ? "file:" : "") + package.remotePath + "#" + version;
 
             SaveManifest(manifest);
         }

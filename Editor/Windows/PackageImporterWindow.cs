@@ -101,9 +101,9 @@ namespace DGTools.Editor {
 
                 #region Action Field
                 GUILayout.BeginHorizontal(skin.FindStyle("ArrayLine"), GUILayout.Width(cellWidth));
-                if (available)
+                if (available && package.isLoaded)
                 {
-                    if (package.offset != package.currentVersionOffset)
+                    if (package.availableVersions[package.offset] != package.currentVersion)
                     {
                         if (GUILayout.Button("Update", skin.button))
                         {
@@ -204,12 +204,14 @@ namespace DGTools.Editor {
 
         //METHODS
         void ReloadPackages() {
+            bool isDev = PackageDatabase.isDevelopement;
             packageDatabase = PackageDatabase.Load();
             EditorCoroutineUtility.StartCoroutine(LoadVersions(), this);
+            PackageDatabase.isDevelopement = isDev;
         }
 
         void ImportPackage(Package package) {
-            packageDatabase.ImportPackage(package);
+            packageDatabase.ImportPackage(package, package.availableVersions[package.offset]);
             AssetDatabase.Refresh();
         }
 
@@ -220,7 +222,6 @@ namespace DGTools.Editor {
 
         void UpdatePackage(Package package)
         {
-            package.currentVersionOffset = package.offset;
             ImportPackage(package);
             ReloadPackages();
         }
