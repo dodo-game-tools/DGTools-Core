@@ -15,22 +15,26 @@ To install this package you just have to add this to your Project/Packages/manif
 }
 ```
 
+You will need [Newtonsoft for Unity](https://github.com/jilleJr/Newtonsoft.Json-for-Unity), click [here](https://github.com/jilleJr/Newtonsoft.Json-for-Unity) to see how to install it
+
 ## How to use?
 
 ### Importing other DGTools
 
 Open "DGTools/Package Importer" window in the Unity Editor, choose your package and just click on "Install".
 
-### What tools inside?
+### List of currently available tools
+ * [UI](https://github.com/Poulpinou/DGTools-UI.git) : Usefull UI Components for your games
+ * [Database](https://github.com/Poulpinou/DGTools-Database.git) :  A powerfull database system
+ * [Forms](https://github.com/Poulpinou/DGTools-Forms.git) : Automatically generated forms
+ * [StateMachine](https://github.com/Poulpinou/DGTools-StateMachine.git) : A simple state machine system
+ * [NeuralNetwork](https://github.com/Poulpinou/DGTools-NeuralNetwork.git) : All you need to build your neural networks
 
-See [Documentation](https://github.com/Poulpinou/DGTools-Core/Documentation/Doc.md)
+ Thoses tools are in developpement and are often updated, feel free to report any issues or ideas to improve them
 
 ## Authors
 
 * **Donovan Persent ([Poulpinou](https://github.com/Poulpinou))**
 
 ## Licenses
-Licences are not implemented yet, but DGTools needs other packages free packages that are included inside, check their licences : 
-
-* [JsonDotNet](https://github.com/Poulpinou/DGTools-Core/Plugins/JsonDotNet/LICENSE.md)
-* [UIController](https://github.com/Poulpinou/DGTools-Core/Plugins/UIController/LICENSE.md)
+Licences are not implemented yet;
