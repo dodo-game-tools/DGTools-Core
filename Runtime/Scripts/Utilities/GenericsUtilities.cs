@@ -7,11 +7,23 @@ using System.Reflection;
 namespace DGTools {
     public static class GenericsUtilities
     {
-        /// <summary>Call a generic methods from a Type (Set reference to null for static methods)</summary>
-        public static object Call(Type type, string methodName, object reference, object[] parameters = null) {
+        /// <summary>Calls a generic method of this kind : Class.Method<T>(T param) (Set reference to null for static methods)</summary>
+        public static object CallMethod(Type ownerType, string methodName, Type paramType, object reference, params object[] parameters)
+        {
 
-            MethodInfo method = type.GetMethod(methodName);
-            MethodInfo genericMethod = method.MakeGenericMethod(type.GenericTypeArguments);
+            MethodInfo method = ownerType.GetMethod(methodName);
+            MethodInfo genericMethod = method.MakeGenericMethod(paramType);
+            object result = genericMethod.Invoke(null, parameters);
+
+            return result;
+        }
+
+        /// <summary>Calls a generic method of this kin : Class<T>.Method<T>(T param) (Set reference to null for static methods)</summary>
+        public static object CallInnerMethod(Type ownerType, string methodName, object reference, params object[] parameters)
+        {
+
+            MethodInfo method = ownerType.GetMethod(methodName);
+            MethodInfo genericMethod = method.MakeGenericMethod(ownerType.GenericTypeArguments);
             object result = genericMethod.Invoke(null, parameters);
 
             return result;
