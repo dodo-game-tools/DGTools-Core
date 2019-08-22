@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace DGTools {
-    public class StaticManager<TManager> : MonoBehaviour 
+    public class StaticManager<TManager> : MonoBehaviour where TManager : MonoBehaviour
     {
         //STATIC VARIABLES
         public static TManager active { get; private set; }
@@ -16,7 +16,7 @@ namespace DGTools {
         {
             if (dontDestroyOnLoad)
             {
-                StaticManager<TManager> obj = FindObjectOfType<StaticManager<TManager>>();
+                TManager obj = FindObjectOfType<TManager>();
 
                 if (obj != null)
                 {
@@ -27,7 +27,7 @@ namespace DGTools {
                     active = GetComponent<TManager>();
                 }
 
-                DontDestroyOnLoad(gameObject);
+                DontDestroyOnLoad(active.gameObject);
             }
             else
             {
